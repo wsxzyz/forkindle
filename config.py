@@ -11,7 +11,7 @@ TIMEZONE = 8  #Default timezone, you can modify it in webpage after deployed
 
 DEFAULT_MASTHEAD = "mh_default.gif" #default masthead
 DEFAULT_COVER = "cv_default.jpg" #default cover, leave it empty will not add cover to book
-DEFAULT_COVER_BV = None #default cover for merged-book, None indicates paste all covers into one
+DEFAULT_COVER_BV = DEFAULT_COVER #default cover for merged-book, None indicates paste all covers into one, =DEFAULT_COVER enable the using of uploaded image.
 
 MY_FEEDS_TITLE = u'KindleEar'
 MY_FEEDS_DESC = u'RSS delivering from KindleEar'
@@ -49,7 +49,7 @@ COLOR_TO_GRAY = True
 
 #Split long image(height of image is bigger than some value) to multiple images or not?
 #This feature is disabled if it be set to None or 0.
-THRESHOLD_SPLIT_LONG_IMAGE = 800
+THRESHOLD_SPLIT_LONG_IMAGE = 750
 
 #----------------end of add by rexdf-------
 

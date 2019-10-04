@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-#A GAE web application to aggregate rss and send it to your kindle.
+#KindleEar: A GAE web application to aggregate rss and send it to your kindle.
 #Visit https://github.com/cdhigh/KindleEar for the latest version
 #Author:
 # cdhigh <https://github.com/cdhigh>
@@ -23,8 +23,8 @@ from google.appengine.runtime.apiproxy_errors import (OverQuotaError,
 
 #import main
 
+#URL请求处理类的基类，实现一些共同的工具函数
 class BaseHandler:
-    " URL请求处理类的基类，实现一些共同的工具函数 "
     def __init__(self):
         if not main.session.get('lang'):
             main.session.lang = self.browerlang()
@@ -77,7 +77,7 @@ class BaseHandler:
     
     #TO可以是一个单独的字符串，或一个字符串列表，对应发送到多个地址
     @classmethod
-    def SendToKindle(self, name, to, title, booktype, attachment, tz=TIMEZONE, filewithtime=False):
+    def SendToKindle(self, name, to, title, booktype, attachment, tz=TIMEZONE, filewithtime=True):
         if PINYIN_FILENAME: # 将中文文件名转换为拼音
             from calibre.ebooks.unihandecode.unidecoder import Unidecoder
             decoder = Unidecoder()
@@ -201,7 +201,8 @@ class BaseHandler:
             imgPath = parts.path
             if imgPath.startswith(r'/'):
                 imgPath = imgPath[1:]
-
+            
+            d = ''
             try: #这个在调试环境是不行的，不过部署好就可以用了
                 with open(imgPath, "rb") as f:
                     d = f.read()
@@ -210,7 +211,9 @@ class BaseHandler:
             else:
                 mime = imghdr.what(None, d)
                 if mime:
-                    data = 'data:image/%s;base64,%s' % (mime, base64.encodestring(d))
-                    img['src'] = data
+                    base64str = base64.encodestring(d)
+                    if len(base64str) < 30000:
+                        data = 'data:image/%s;base64,%s' % (mime, base64str)
+                        img['src'] = data
             
         return unicode(soup)
