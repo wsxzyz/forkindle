@@ -6,12 +6,10 @@
 # rexdf <https://github.com/rexdf>
 
 import web, urllib, hashlib
-
 from google.appengine.api import mail
 from apps.BaseHandler import BaseHandler
 from apps.dbModels import *
 from apps.utils import hide_email, etagged, ke_encrypt, ke_decrypt
-
 from bs4 import BeautifulSoup
 from books.base import BaseUrlBook
 from lib.pocket import Pocket
@@ -127,8 +125,6 @@ class Share(BaseHandler):
             return "[Share]Fetch url failed."
     
     def SaveToPocket(self, user, action, orgUrl):
-        INSTAPAPER_API_ADD_URL = 'https://www.instapaper.com/api/add'
-
         web.header('Content-type', "text/html; charset=utf-8")
         
         T_INFO = u"""<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
@@ -159,6 +155,8 @@ class Share(BaseHandler):
         return info.encode('utf-8')
         
     def SaveToInstapaper(self, user, action, orgUrl):
+        INSTAPAPER_API_ADD_URL = 'https://www.instapaper.com/api/add'
+        
         web.header('Content-type', "text/html; charset=utf-8")
         
         T_INFO = u"""<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>

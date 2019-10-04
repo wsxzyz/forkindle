@@ -1,5 +1,32 @@
 # Changelog for KindleEar
 
+## 1.26
+  1. Add shared library, all user of KindleEar can share links for others.
+  2. [by contributor] Create responsive layouts for mobiles.
+  3. [by contributor] Add Bookmarklets.
+  4. [by contributor] Add more comic books.
+  5. [by contributor] Add support of Sendgrid.
+
+## 1.25.5
+  1. Added some online novel books. (implemented by skiinder<https://github.com/skiinder>.)
+  2. OPML can be imported as fulltext or summary.
+
+## 1.25.4
+  1. Improved 'Deliver now' feature, can select which feeds (in custom RSS) to been push. The feature is actived when have only custom RSS subscripted.
+
+## 1.25.3
+  1. 'Deliver now' can select which books to been push (moved to 'Advanced|Deliver now').
+  2. New option allows remove hyperlinks of text.
+  
+## 1.25.2
+  1. Update links of book "Economist".
+  2. bugfix: fix the crash problem of 'xxx@appid.appspotmail.com' feature.
+  3. bugfix: fix the crash problem of 'Save to Instapaper' feature.
+
+## 1.25.1
+  1. The expiration of account can be defined.
+  2. bugfix: pictures can't be resized in comic mode.
+
 ## 1.25
   1. Added comic mode and several comic books.
   2. Added supported to Kindle Voyage and Kindle PaperWhite3.

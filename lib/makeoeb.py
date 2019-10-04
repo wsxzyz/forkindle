@@ -61,12 +61,13 @@ def CreateOeb(log, path_or_stream, opts, encoding='utf-8'):
     html_preprocessor = HTMLPreProcessor(log, opts)
     if not encoding:
         encoding = None
-    return OEBBook(log, html_preprocessor, pretty_print=opts.pretty_print, input_encoding=encoding)
+    pretty_print = opts.pretty_print if opts else False
+    return OEBBook(log, html_preprocessor, pretty_print=pretty_print, input_encoding=encoding)
 
 #OEB的一些生成选项
 def getOpts(output_type='kindle', book_mode='periodical'):
     from calibre.customize.profiles import (KindleOutput, KindlePaperWhiteOutput, KindleDXOutput, KindleFireOutput, 
-        KindleVoyageOutput, KindlePaperWhite3Output, OutputProfile)
+        KindleVoyageOutput, KindlePaperWhite3Output, KindleOasisOutput, OutputProfile)
     from config import REDUCE_IMAGE_TO
     opts = OptionValues()
     setattr(opts, "pretty_print", False)
@@ -86,6 +87,8 @@ def getOpts(output_type='kindle', book_mode='periodical'):
         'kindlefire': KindleFireOutput,
         'kindlevoyage': KindleVoyageOutput,
         'kindlepw3': KindlePaperWhite3Output,
+        'kindlepw4': KindlePaperWhite3Output,
+        'kindleoasis': KindleOasisOutput,
         'others': OutputProfile,
         }
     OutputDevice = outputdic.get(output_type, KindleOutput)
@@ -99,7 +102,10 @@ def getOpts(output_type='kindle', book_mode='periodical'):
     setattr(opts, "graying_image", COLOR_TO_GRAY) #changed
     setattr(opts, "image_png_to_jpg", COLOR_TO_GRAY) #changed
     setattr(opts, "fix_indents", False)
-    setattr(opts, "reduce_image_to", REDUCE_IMAGE_TO or OutputDevice.screen_size)
+    if REDUCE_IMAGE_TO:
+        setattr(opts, "reduce_image_to", REDUCE_IMAGE_TO)
+    else:
+        setattr(opts, "reduce_image_to", OutputDevice.comic_screen_size if book_mode == 'comic' else OutputDevice.screen_size)
     
     #epub
     setattr(opts, "dont_split_on_page_breaks", False)
@@ -126,6 +132,6 @@ def setMetaData(oeb, title='Feeds', lang='zh-cn', date=None, creator='KindleEar'
     oeb.metadata.add("publication_type", pubtype)
     if not date:
         import datetime
-        date = datetime.datetime.strftime(datetime.datetime.now(),"%Y-%m-%d")
+        date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d')
     oeb.metadata.add("date", date)
 

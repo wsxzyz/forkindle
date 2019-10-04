@@ -172,6 +172,7 @@ class KindleInput(InputProfile):
     # Screen size is a best guess
     screen_size               = (525, 640)
     dpi                       = 168.451
+    comic_screen_size         = (600, 800)
     fbase                     = 16
     fsizes                    = [12, 12, 14, 16, 18, 20, 22, 24]
 
@@ -675,6 +676,7 @@ class KindleOutput(OutputProfile):
     # Screen size is a best guess
     screen_size               = (525, 640)
     dpi                       = 168.451
+    comic_screen_size         = (600, 800)
     fbase                     = 16
     fsizes                    = [12, 12, 14, 16, 18, 20, 22, 24]
     supports_mobi_indexing = True
@@ -740,6 +742,16 @@ class KindlePaperWhite3Output(KindleVoyageOutput):
     dpi                       = 300.0
     comic_screen_size = screen_size
 
+class KindleOasisOutput(KindlePaperWhite3Output):
+
+    name = 'Kindle Oasis'
+    short_name = 'kindle_oasis'
+    description = _('This profile is intended for the Amazon Kindle Oasis 2017 and above')
+    # Screen size is currently just the spec size, actual renderable area will
+    # depend on someone with the device doing tests.
+    screen_size               = (1264, 1680)
+    dpi                       = 300.0
+    comic_screen_size = screen_size
 
 class KindleFireOutput(KindleDXOutput):
 
@@ -854,7 +866,7 @@ output_profiles = [
     NookColorOutput, PocketBook900Output,
     PocketBookPro912Output, GenericEink, GenericEinkLarge, GenericEinkHD,
     KindleFireOutput, KindlePaperWhiteOutput, KindleVoyageOutput,
-    KindlePaperWhite3Output
+    KindlePaperWhite3Output, KindleOasisOutput
 ]
 
 output_profiles.sort(cmp=lambda x,y:cmp(x.name.lower(), y.name.lower()))

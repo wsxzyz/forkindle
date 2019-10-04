@@ -29,12 +29,16 @@ class Setting(BaseHandler):
         webInput = web.input()
         kemail = webInput.get('kindleemail')
         mytitle = webInput.get("rt")
+        sgenable = bool(webInput.get('sgenable'))
+        sgapikey = webInput.get('sgapikey')
         if not kemail:
             tips = _("Kindle E-mail is requied!")
         elif not mytitle:
             tips = _("Title is requied!")
+        elif sgenable and (not sgapikey):
+            tips = _("Need sendgrid ApiKey!")
         else:
-            user.kindle_email = kemail
+            user.kindle_email = kemail.strip(';, ')
             user.timezone = int(webInput.get('timezone', TIMEZONE))
             user.send_time = int(webInput.get('sendtime'))
             user.enable_send = bool(webInput.get('enablesend'))
@@ -46,6 +50,9 @@ class Setting(BaseHandler):
             user.send_days = [day for day in alldays if webInput.get(day)]
             user.merge_books = bool(webInput.get('mergebooks'))
             user.book_mode = webInput.get('bookmode')
+            user.remove_hyperlinks = webInput.get('removehyperlinks')
+            user.sgenable = sgenable
+            user.sgapikey = sgapikey
             user.put()
             
             myfeeds = user.ownfeeds

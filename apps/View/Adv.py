@@ -24,7 +24,17 @@ class AdvSettings(BaseHandler):
     __url__ = "/adv"
     #@etagged()
     def GET(self):
-        raise web.seeother(AdvWhiteList.__url__)
+        raise web.seeother(AdvDeliverNow.__url__)
+
+#现在推送
+class AdvDeliverNow(BaseHandler):
+    __url__ = "/advdelivernow"
+    @etagged()
+    def GET(self):
+        user = self.getcurrentuser()
+        books = [item for item in Book.all() if user.name in item.users]
+        return self.render('advdelivernow.html', "Deliver now", current='advsetting',
+            user=user, advcurr='delivernow', books=books, booksnum=len(books))
 
 #设置邮件白名单
 class AdvWhiteList(BaseHandler):
@@ -32,8 +42,8 @@ class AdvWhiteList(BaseHandler):
     @etagged()
     def GET(self):
         user = self.getcurrentuser()
-        return self.render('advwhitelist.html',"White List",current='advsetting',
-            user=user,advcurr='whitelist')
+        return self.render('advwhitelist.html', "White List", current='advsetting',
+            user=user, advcurr='whitelist')
         
     def POST(self):
         user = self.getcurrentuser()
@@ -47,7 +57,7 @@ class AdvWhiteList(BaseHandler):
                 wlist = wlist[2:]
             if wlist:
                 WhiteList(mail=wlist, user=user).put()
-        raise web.seeother('')
+        raise web.seeother(self.__url__)
 
 #设置归档和分享配置项
 class AdvArchive(BaseHandler):
@@ -57,7 +67,7 @@ class AdvArchive(BaseHandler):
     def GET(self):
         user = self.getcurrentuser()
         
-        return self.render('advarchive.html', "Share", current='advsetting', user=user, advcurr='share',
+        return self.render('advarchive.html', "Archive", current='advsetting', user=user, advcurr='archive',
             savetoevernote=SAVE_TO_EVERNOTE, savetowiz=SAVE_TO_WIZ, savetopocket=SAVE_TO_POCKET, 
             savetoinstapaper=SAVE_TO_INSTAPAPER, ke_decrypt=ke_decrypt,
             shareonxweibo=SHARE_ON_XWEIBO, shareontweibo=SHARE_ON_TWEIBO, shareonfacebook=SHARE_ON_FACEBOOK,
@@ -112,7 +122,7 @@ class AdvArchive(BaseHandler):
         user.browser = browser
         user.qrcode = qrcode
         user.put()
-        raise web.seeother('')
+        raise web.seeother(self.__url__)
 
 #设置URL过滤器
 class AdvUrlFilter(BaseHandler):
@@ -120,8 +130,8 @@ class AdvUrlFilter(BaseHandler):
     @etagged()
     def GET(self):
         user = self.getcurrentuser()
-        return self.render('advurlfilter.html',"Url Filter",current='advsetting',
-            user=user,advcurr='urlfilter')
+        return self.render('advurlfilter.html', "Url Filter", current='advsetting',
+            user=user, advcurr='urlfilter')
         
     def POST(self):
         user = self.getcurrentuser()
@@ -129,7 +139,7 @@ class AdvUrlFilter(BaseHandler):
         url = web.input().get('url')
         if url:
             UrlFilter(url=url,user=user).put()
-        raise web.seeother('')
+        raise web.seeother(self.__url__)
 
 #删除白名单或URL过滤器项目
 class AdvDel(BaseHandler):
@@ -156,12 +166,13 @@ class AdvImport(BaseHandler):
     @etagged()
     def GET(self, tips=None):
         user = self.getcurrentuser()
-        return self.render('advimport.html',"Import",current='advsetting',
-            user=user,advcurr='import',tips=tips)
+        return self.render('advimport.html', "Import", current='advsetting',
+            user=user, advcurr='import', tips=tips)
 
     def POST(self):
         import opml
         x = web.input(importfile={})
+        defaultIsfulltext = bool(x.get('defaultIsfulltext')) #默认是否按全文RSS导入
         if 'importfile' in x:
             user = self.getcurrentuser()
             try:
@@ -171,7 +182,13 @@ class AdvImport(BaseHandler):
             
             for o in self.walkOutline(rsslist):
                 title, url, isfulltext = o.text, urllib.unquote_plus(o.xmlUrl), o.isFulltext #isFulltext为非标准属性
-                isfulltext = bool(isfulltext.lower() in ('true', '1'))
+                if isfulltext.lower() in ('true', '1'):
+                    isfulltext = True
+                elif isfulltext.lower() in ('false', '0'):
+                    isfulltext = False
+                else:
+                    isfulltext = defaultIsfulltext
+                    
                 if title and url:
                     try:
                         url = url.decode('utf-8')
@@ -183,12 +200,12 @@ class AdvImport(BaseHandler):
                         rss.isfulltext = isfulltext
                         rss.put()
                     else:
-                        Feed(title=title,url=url,book=user.ownfeeds,isfulltext=isfulltext,
+                        Feed(title=title, url=url, book=user.ownfeeds, isfulltext=isfulltext,
                             time=datetime.datetime.utcnow()).put()
                             
             raise web.seeother('/my')
         else:
-            raise web.seeother('')
+            raise web.seeother(self.__url__)
     
     def walkOutline(self, outline):
         #遍历opml的outline元素，支持不限层数的嵌套
@@ -234,8 +251,8 @@ class AdvExport(BaseHandler):
         outlines = '\n'.join(outlines)
         
         opmlfile = opmlTpl % (date, date, outlines)
-        web.header("Content-Type","text/xml;charset=utf-8")
-        web.header("Content-Disposition","attachment;filename=KindleEar_subscription.xml")
+        web.header("Content-Type", "text/xml;charset=utf-8")
+        web.header("Content-Disposition", "attachment;filename=KindleEar_subscription.xml")
         return opmlfile.encode('utf-8')
 
 #在本地选择一个图片上传做为自定义RSS书籍的封面
@@ -254,9 +271,9 @@ class AdvUploadCoverImageAjax(BaseHandler):
     MAX_IMAGE_PIXEL = 1024
     def POST(self):
         ret = 'ok'
+        user = self.getcurrentuser(forAjax=True)
         try:
             x = web.input(coverfile={})
-            user = self.getcurrentuser()
             file_ = x['coverfile'].file
             if user and file_:
                 #将图像转换为JPEG格式，同时限制分辨率不超过1024
@@ -280,9 +297,9 @@ class AdvDeleteCoverImageAjax(BaseHandler):
     __url__ = "/advdeletecoverimageajax"
     def POST(self):
         ret = {'status': 'ok'}
+        user = self.getcurrentuser(forAjax=True)
         try:
             confirmKey = web.input().get('action')
-            user = self.getcurrentuser()
             if user and confirmKey == 'delete':
                 user.cover = None
                 user.put()
@@ -353,7 +370,7 @@ class VerifyAjax(BaseHandler):
             respDict['status'] = _('Request type[%s] unsupported') % verType
             return json.dumps(respDict)
         
-        user = self.getcurrentuser()
+        user = self.getcurrentuser(forAjax=True)
         
         username = web.input().get('username', '')
         password = web.input().get('password', '')

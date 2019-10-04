@@ -23,13 +23,15 @@ from calibre.ebooks.conversion.epuboutput import EPUBOutput
 from calibre.utils.bytestringio import byteStringIO
 from books import BookClasses, BookClass
 from books.base import BaseFeedBook, BaseComicBook
-    
-#实际下载文章和生成电子书并且发送邮件
+from books.comic import ComicBaseClasses, comic_domains
+
+# 实际下载文章和生成电子书并且发送邮件
 class Worker(BaseHandler):
     __url__ = "/worker"
     def GET(self):
         username = web.input().get("u")
         bookid = web.input().get("id")
+        feedsId = web.input().get("feedsId")
         
         user = KeUser.all().filter("name = ", username).get()
         if not user:
@@ -38,6 +40,7 @@ class Worker(BaseHandler):
         to = user.kindle_email
         if (';' in to) or (',' in to):
             to = to.replace(',', ';').replace(' ', '').split(';')
+            to = list(filter(lambda x: x.find('@', 1, len(x) - 1) > 0, to)) #最简单的判断是否是EMAIL
         
         booktype = user.book_type #mobi,epub
         bookmode = user.book_mode or 'periodical' #periodical,comic
@@ -50,9 +53,15 @@ class Worker(BaseHandler):
             try:
                 bks.append(Book.get_by_id(int(id_)))
             except:
+                main.log.warn("Can't find book {}".format(id_))
                 continue
                 #return "id of book is invalid or book not exist!<br />"
         
+        # Deliver only some feeds in custom rss
+        if feedsId:
+            feedsId = [int(item) for item in feedsId.split('|') if item.isdigit()]
+            feedsId = [Feed.get_by_id(item) for item in feedsId if Feed.get_by_id(item)]
+
         book4meta = None
         if len(bks) == 0:
             return "No have book to push!"
@@ -74,10 +83,6 @@ class Worker(BaseHandler):
         
         if not book4meta:
             return "No have book to push.<br />"
-            
-        opts = None
-        oeb = None
-        
         # 创建 OEB
         #global log
         opts = getOpts(user.device, bookmode)
@@ -113,10 +118,12 @@ class Worker(BaseHandler):
                         if imgType: #如果是合法图片
                             imgMime = r"image/" + imgType
                         else:
-                            main.log.warn('content of cover is invalid : [%s].' % bookTitle)
+                            main.log.warn(u'content of cover is invalid : [%s].' % bookTitle)
                             imgData = None
-                except Exception as e:
-                    main.log.warn('Failed to fetch cover for book [%s]. [Error: %s]' % (bookTitle, str(e)))
+                except:
+                    main.log.exception(
+                        u"Failed to fetch cover for book [%s]" % bookTitle
+                    )
                     coverfile = DEFAULT_COVER
                     imgData = None
                     imgMime = ''
@@ -153,7 +160,10 @@ class Worker(BaseHandler):
                     if subs_info:
                         book.account = subs_info.account
                         book.password = subs_info.password
-            else: # 自定义RSS
+                if issubclass(cbook, BaseComicBook):
+                    self.push_comic_book(username, user, book)
+                    continue
+            else:  # 自定义RSS
                 if bk.feedscount == 0:
                     continue  #return "the book has no feed!<br />"
                     
@@ -164,8 +174,13 @@ class Worker(BaseHandler):
                 book.keep_image = bk.keep_image
                 book.oldest_article = bk.oldest_article
                 book.fulltext_by_readability = True
-                feeds = bk.feeds
-                book.feeds = [(feed.title, feed.url, feed.isfulltext) for feed in feeds]
+                feeds = feedsId if feedsId else bk.feeds
+                book.feeds = []
+                for feed in feeds:
+                    if feed.url.startswith(comic_domains):
+                        self.ProcessComicRSS(username, user, feed)
+                    else:
+                        book.feeds.append((feed.title, feed.url, feed.isfulltext))
                 book.url_filters = [flt.url for flt in user.urlfilter]
                 
             # 对于html文件，变量名字自文档,thumbnail为文章第一个img的url
@@ -189,26 +204,15 @@ class Worker(BaseHandler):
                         sections.setdefault(sec_or_media, [])
                         sections[sec_or_media].append((title, brief, thumbnail, content))
                         itemcnt += 1
-            except Exception as e:
-                excFileName, excFuncName, excLineNo = get_exc_location()
-                main.log.warn("Failed to push <%s> : %s, in file '%s', %s (line %d)" % (
-                    book.title, str(e), excFileName, excFuncName, excLineNo))
+            except:
+                main.log.exception(u"Failed to push <%s>" % book.title)
                 continue
         
         volumeTitle = ''
         if itemcnt > 0:
-            #漫画模式不需要TOC和缩略图
-            if bookmode == 'comic':
-                insertHtmlToc = False
-                insertThumbnail = False
-                if len(bks) == 1 and book: #因为漫画模式没有目录，所以在标题中添加卷号
-                    volumeTitle = book.LastDeliveredVolume()
-                    oeb.metadata.clear('title')
-                    oeb.metadata.add('title', bookTitle + volumeTitle)
-            else:
-                insertHtmlToc = GENERATE_HTML_TOC
-                insertThumbnail = GENERATE_TOC_THUMBNAIL
-            
+            insertHtmlToc = GENERATE_HTML_TOC
+            insertThumbnail = GENERATE_TOC_THUMBNAIL
+
             InsertToc(oeb, sections, toc_thumbnails, insertHtmlToc, insertThumbnail)
             oIO = byteStringIO()
             o = EPUBOutput() if booktype == "epub" else MOBIOutput()
@@ -329,9 +333,161 @@ class Worker(BaseHandler):
         
         #新生成的图片再整体缩小到设定大小
         rw,rh = opts.reduce_image_to
-        ratio = min(float(rw)/float(new_size[0]), float(rh)/float(new_size[0]))
-        imgnew = imgnew.resize((int(new_size[0]*ratio), int(new_size[1]*ratio)))
+        ratio = min(float(rw) / float(new_size[0]), float(rh) / float(new_size[1]))
+        imgnew = imgnew.resize((int(new_size[0] * ratio), int(new_size[1] * ratio)))
         data = StringIO.StringIO()
         imgnew.save(data, 'JPEG')
         return data.getvalue()
-        
+
+    def push_comic_book(self, username, user, book, opts=None):
+        if not opts:
+            opts = getOpts(user.device, "comic")
+        oeb = CreateOeb(main.log, None, opts)
+        pubtype = 'book:book:KindleEar'
+        language = 'zh-cn'
+
+        setMetaData(
+            oeb,
+            book.title,
+            language,
+            local_time("%Y-%m-%d", user.timezone),
+            pubtype=pubtype,
+        )
+        oeb.container = ServerContainer(main.log)
+
+        #guide
+        id_, href = oeb.manifest.generate('masthead', DEFAULT_MASTHEAD) # size:600*60
+        oeb.manifest.add(id_, href, MimeFromFilename(DEFAULT_MASTHEAD))
+        oeb.guide.add('masthead', 'Masthead Image', href)
+
+        id_, href = oeb.manifest.generate('cover', DEFAULT_COVER)
+        item = oeb.manifest.add(id_, href, MimeFromFilename(DEFAULT_COVER))
+
+        oeb.guide.add('cover', 'Cover', href)
+        oeb.metadata.add('cover', id_)
+
+        itemcnt, imgindex = 0, 0
+        sections = OrderedDict()
+        toc_thumbnails = {} #map img-url -> manifest-href
+
+        chapters = book.ParseFeedUrls()
+        if not chapters:
+            self.deliverlog(
+                username,
+                str(user.kindle_email),
+                book.title,
+                0,
+                status="nonews",
+                tz=user.timezone,
+            )
+            return
+        for (
+            bookname,
+            chapter_title,
+            img_list,
+            chapter_url,
+            next_chapter_index,
+        ) in chapters:
+            try:
+                image_count = 0
+                for (
+                    mime_or_section,
+                    url,
+                    filename,
+                    content,
+                    brief,
+                    thumbnail,
+                ) in book.gen_image_items(img_list, chapter_url):
+                    if not mime_or_section or not filename or not content:
+                        continue
+
+                    if mime_or_section.startswith(r"image/"):
+                        id_, href = oeb.manifest.generate(id="img", href=filename)
+                        item = oeb.manifest.add(
+                            id_, href, mime_or_section, data=content
+                        )
+                        if thumbnail:
+                            toc_thumbnails[url] = href
+                    else:
+                        sections.setdefault(mime_or_section, [])
+                        sections[mime_or_section].append(
+                            (filename, brief, thumbnail, content)
+                        )
+                        image_count += 1
+
+                title = book.title + " " + chapter_title
+                if not image_count:
+                    self.deliverlog(
+                        username,
+                        str(user.kindle_email),
+                        title,
+                        0,
+                        status="can't download image",
+                        tz=user.timezone,
+                    )
+                    rs = "No new feeds."
+                    main.log.info(rs)
+                    continue
+                insertHtmlToc = False
+                insertThumbnail = False
+                oeb.metadata.clear("title")
+                oeb.metadata.add("title", title)
+
+                InsertToc(oeb, sections, toc_thumbnails, insertHtmlToc, insertThumbnail)
+                oIO = byteStringIO()
+                o = EPUBOutput() if user.book_type == "epub" else MOBIOutput()
+                o.convert(oeb, oIO, opts, main.log)
+                try:
+                    ultima_log = DeliverLog.all().order("-time").get()
+                except:
+                    ultima_log = sorted(
+                        DeliverLog.all(), key=attrgetter("time"), reverse=True
+                    )
+                    ultima_log = ultima_log[0] if ultima_log else None
+
+                if ultima_log:
+                    diff = datetime.datetime.utcnow() - ultima_log.datetime
+                    if diff.days * 86400 + diff.seconds < 10:
+                        time.sleep(8)
+
+                self.SendToKindle(
+                    username,
+                    user.kindle_email,
+                    title,
+                    user.book_type,
+                    str(oIO.getvalue()),
+                    user.timezone,
+                )
+                book.UpdateLastDelivered(bookname, chapter_title, next_chapter_index)
+                rs = "%s(%s).%s Sent!" % (
+                    title,
+                    local_time(tz=user.timezone),
+                    user.book_type,
+                )
+                main.log.info(rs)
+            except:
+                main.log.exception(
+                    u"Failed to push {} {}".format(bookname, chapter_title)
+                )
+
+    def ProcessComicRSS(self, username, user, feed):
+        opts = getOpts(user.device, "comic")
+        for ComicBaseClass in ComicBaseClasses:
+            if feed.url.startswith(ComicBaseClass.accept_domains):
+                book = ComicBaseClass(opts=opts, user=user)
+                break
+        else:
+            msg = u"No base class for {}".format(feed.title)
+            main.log.error(msg)
+            return
+
+        book.title = feed.title
+        book.description = feed.title
+        book.language = "zh-cn"
+        book.keep_image = True
+        book.oldest_article = 7
+        book.fulltext_by_readability = True
+        book.feeds = [(feed.title, feed.url)]
+        book.url_filters = [flt.url for flt in user.urlfilter]
+
+        return self.push_comic_book(username, user, book, opts)
