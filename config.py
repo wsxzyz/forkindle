@@ -28,7 +28,7 @@ ALWAYS_CHAR_DETECT = False
 
 #True indicates that any encoding in http header or in html header will be used.
 #False indicates that encoding will be used if the encoding in http header and the one in html header are the same.
-TRUST_ENCODING_IN_HEADER_OR_META = False
+TRUST_ENCODING_IN_HEADER_OR_META = True
 
 #generate brief description for toc item or not.
 GENERATE_TOC_DESC = True
@@ -46,6 +46,11 @@ GENERATE_HTML_TOC = True
 
 #if convert color image to gray or not, good for reducing size of book if you read it in Kindle only
 COLOR_TO_GRAY = True
+
+#Split long image(height of image is bigger than some value) to multiple images or not?
+#This feature is disabled if it be set to None or 0.
+THRESHOLD_SPLIT_LONG_IMAGE = 800
+
 #----------------end of add by rexdf-------
 
 #reduce dimension of image to (Width,Height)
@@ -77,6 +82,7 @@ SHARE_FUCK_GFW_SRV = "http://kforwarder.herokuapp.com/?k=xzSlE&t=60&u=%s"
 SAVE_TO_EVERNOTE = u"Save to Evernote"
 SAVE_TO_WIZ = u"Save to Wiz"
 SAVE_TO_POCKET = u"Save to Pocket"
+SAVE_TO_INSTAPAPER = u"Save to Instapaper"
 SHARE_ON_XWEIBO = u"Share on Sina Weibo"
 SHARE_ON_TWEIBO = u"Share on Tencent Weibo"
 SHARE_ON_FACEBOOK = u"Share on Facebook"

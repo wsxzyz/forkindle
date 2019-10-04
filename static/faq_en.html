@@ -45,6 +45,7 @@
         <li><a href="#pushseparate">What's the meaning of the "Separate" option for the built-in books?</a></li>
         <li><a href="#internalerror">How to solve it if website shows "internal server error" exception.</a></li>
         <li><a href="#savetopocket">How to use the feature 'Save to Pocket'?</a></li>
+        <li><a href="#wrongemail">My logs shows error 'wrong SRC_EMAIL'?</a></li>
       </ul>
     </div>
 
@@ -59,6 +60,7 @@
    <li>The magazine format MOBI with images</li>
    <li>Automatically daily scheduled delivery</li>
    <li>Powerful email service</li>
+   <li>Integration with Evernote/Pocket/Instapaper etc</li>
     </ul>
     Benefits:
     <ul>
@@ -70,14 +72,16 @@
 
     <span id="needserver"></span>
     <h2>Dows this application require its own server?</h2>
-    <p class="answer">This application is hosted on Google App Engine, it's fine if you don't own a server.</p>
-
+    <p class="answer">This application is hosted on Google App Engine (GAE), GAE has free quotas enough for small applications like KindleEar, you don't need to pay a penny to run KindleEar in GAE, it's fine if you don't own a server(VPS or other infrastructure).<br/><br/>
+    <strong>Remember:</strong> GAE(Google App Engine) is not GCE (Google Computer Engine), GAE is free forever (with limit of quotas of resources), GCE is free only within 60 days trial. you don't need to start a GCE trial.
+    </p>
+    
     <span id="ownserver"></span>
     <h2>How to deploy my own delivery server?</h2>
     <p class="answer"><strong>The formal way:</strong>
         <ol>
         <li><a href="https://github.com/cdhigh/KindleEar/archive/master.zip">Download</a> the latest version of KindleEar on github and then extract it to somewhere, for example C:\KindleEar (we'll use it in the following steps).</li>
-        <li>You need a GAE account, please visit the <a href="https://appengine.google.com/">Google AppEngine</a> page. Use your gmail account to login, click on "Create Application", select "others" in the account activation SMS page, enter your cellphone number with your country code (+nn), click "Send". You will receive an activation message on the phone in a while, after activating your account, click "Create Application" again, in the "Application Identifier" field, enter a name of your applications (e.g. Kindleear123). The remaining options can be kept as default , click on the "Create Application" button to create a GAE application.</li>
+        <li>You need a google account, please visit the <a href="https://console.developers.google.com">Google Developers Console</a> page. Use your gmail account to login, click on "Create an empty Project", follow steps to create a GAE application.</li>
         <li>Install Python 2.7.x. <a href="https://www.python.org/downloads/">Download</a> the latest 2.7.x source release and then install it.  Do not install a Python 3.x version, because GAE does not support it now.</li>
         <li>Install GAE SDK, which will be used to upload a GAE program. In section on <a href="https://developers.google.com/appengine/downloads">this page</a>, click "Google App Engine SDK for Python", choose your platform, click to download the corresponding version, then install, all the way "next" without words.</li>
         <li>Go to the previously downloaded KindleEar directory (e.g. C:\KindleEar), use a text editor to open app.yaml and module-worker.yaml file, modify the word 'kindleear' in the first line to your GAE application name (e.g. kindleear123), then save and exit.</li>
@@ -85,10 +89,10 @@
         <li>Start upload KindleEar now. You can use Google App Engine Launcher GUI or command line. Because Launcher is not stable, we'll use the command line in Windows.
           <ul>
             <li>Followed by clicking: Start - Run - type cmd, it will open a command line window</li>
-            <li>Change current directory to App Engine SDK installation directory, example: <code>cd C:\Program Files\Google\google_appengine</code></li>
-            <li>Enter 'upload' command: <code>C:\python27\python.exe appcfg.py update C:\KindleEar\app.yaml C:\KindleEar\module-worker.yaml</code></li>
+            <li>Change current directory to App Engine SDK installation directory, example: <br/><code>cd C:\Program Files\Google\google_appengine</code></li>
+            <li>Enter 'upload' command: <br/><code>C:\python27\python.exe appcfg.py update C:\KindleEar\app.yaml C:\KindleEar\module-worker.yaml</code></li>
             <li>Enter the gmail account and password (password does not display in screen).</li>
-            <li>Enter command: <code>C:\python27\python.exe appcfg.py update C:\KindleEar</code></li>
+            <li>Enter command: <br/><code>C:\python27\python.exe appcfg.py update C:\KindleEar</code></li>
           </ul>
         </li>
         <li>After successfully uploading KindleEar, use your browser to open the site: http://kindleear123.appspot.com (example only, kindleear123 should be changed to the name of your GAE application). If everything goes fine, then go to the last step.</li>
@@ -112,6 +116,7 @@
     <li>You haven't enabled the "Enable deliver custom rss" option, this option is at the bottom of the setting page.</li>
     <li>You haven't added your gmail address to Amazon's <a href="https://www.amazon.com/gp/digital/fiona/manage#pdocSettings" rel="external" target="_blank">'Approved Personal Document E-mail List'</a>.</li>
     <li>The content of the rss link isn't a valid XML format.</li>
+    <li>For those feeds generated by Feedburner, you can append a query string '?format=xml' to end of url, for example: http://xx.com/feed?format=xml.</li>
     </ol></p>
 
     <span id="whatisfulltext"></span>
@@ -124,7 +129,8 @@
 
     <span id="weekly"></span>
     <h2>How to deal with weekly subscription?</h2>
-    <p class="answer">Some rss are updated weekly. For this type of rss, you can touch a new python file in the 'books' directory with variable 'deliver_days' setted to a day(e.g. deliver_days=['Friday']).</p>
+    <p class="answer">Some rss are updated weekly. For this type of rss, you can touch a new python file in the 'books' directory with variable 'deliver_days' setted to a day.<br/>
+    <code>deliver_days=['Friday']</code></p>
 
     <span id="moretimesperday"></span>
     <h2>Can KindleEar deliver news to my kindle more than once a day?</h2>
@@ -132,10 +138,10 @@
     <ol>
       <li>Add a python file to the directory of 'books'.</li>
       <li>Set 'deliver_times' using a list in the new python file.
-        <br />For example: <code>deliver_times=[6,14,22] #6:00,14:00,22:00 deliver three times a day</code>
+        <br />For example: <br/><code>deliver_times=[6,14,22] #6:00,14:00,22:00 deliver three times a day</code>
       </li>
       <li>Optional: set 'oldest_article' to the number of interval seconds between two deliveries.
-        <br />For example: <code>oldest_article=28800 #8*60*60</code>
+        <br />For example: <br/><code>oldest_article=28800 #8*60*60</code>
       </li>
     </ol>
     </p>
@@ -150,9 +156,9 @@
 
     <span id="imagesfolder"></span>
     <h2>How to put the cover or the masthead images in the same directory when I add a customize book?</h2>
-    <p class="answer">Set the variable mastheadfile and coverfile to a path, for example:<ul>
-        <li>mastheadfile = 'books/xxxx.gif'</li>
-        <li>coverfile = 'books/xxxx.jpg'</li></ul>
+    <p class="answer">Set the variable mastheadfile and coverfile to a path, for example:<br/>
+        <code>mastheadfile = 'books/xxxx.gif'<br/>
+        coverfile = 'books/xxxx.jpg'</code>
     </p>
 
     <span id="sslerror"></span>
@@ -187,12 +193,15 @@
     <h2>How to use mail service xxx@appid.appspotmail.com?</h2>
     <p class="answer">
     You'll have uncountable mail addresses like xxx@appid.appspotmail.com as long as xxx is valid ascii string after you have deployed KindleEar(appid is your application id).<br/>
-    <ul> <li>KindleEar will convert the text of the email received from xxx@appid.appspotmail.com as an attachment and then send it to your registered email address. If there are only hyperinks in the email, KindleEar will first fetch the url, generate a book and then send it.</li>
-       <li>Before you can enjoy the feature, please add email addresses to the whitelist in menu 'Advance'|'White List'. A asterisk '*' means allow anyone to trigger it, or only allow some people by adding their emaill addresses like 'john@example.com/susan@example.com'.</li>
-       <li>The generated book will be sent to admin's mailbox by default. Use username__xxx@appid.appspotmail.com(Note: there're two underscores) if you want the book to be sent to other registered users.</li>
-       <li>Send emails with the download link of an ebook to book@appid.appspotmail.com or username__book@appid.appspotmail.com will trigger a task to download the ebook and then diliver it to kindle directly.<br />
-        Refer to <a href="https://developers.google.com/appengine/docs/python/mail#Python_Sending_mail_with_attachments">Mail Python API Overview</a> to get to know the list of allowed postfix of ebooks. <br /></li>
-       <li>Send emails to trigger@appid.appspotmail.com or username__trigger@appid.appspotmail.com will trigger a delivery by hand.It equals to the 'deliver now' button in 'Setting' Menu if the subject is empty or is 'all'.Deliver specific books by adding the name of the book, seperate with commma if there is more than one.<br /></li>
+    <ul> 
+        <li>Before you can enjoy the feature, please add email addresses to the whitelist in menu 'Advance'|'White List'. A asterisk '*' means allow anyone to trigger it, or only allow some people by adding their emaill addresses like 'john@example.com/susan@example.com'.</li>
+        <li>KindleEar will convert the text of the email received from xxx@appid.appspotmail.com as an attachment and then send it to your registered email address. If there are only hyperinks in the email, KindleEar will first fetch the url, generate a book and then send it.</li>
+        <li>Add flag !links to end of subject to indicate KindleEar crawl all links in email and transfer to your Kindle.</li>
+        <li>Add flga !article to end of subject to indicate KindleEar ignore all links in email.</li>
+        <li>The generated book will be sent to admin's mailbox by default. Use username__xxx@appid.appspotmail.com(Note: there're two underscores) if you want the book to be sent to other registered users.</li>
+        <li>Send emails with the download link of an ebook to book@appid.appspotmail.com or username__book@appid.appspotmail.com will trigger a task to download the ebook and then diliver it to kindle directly.<br />
+        Refer to <a href="https://cloud.google.com/appengine/docs/python/mail/#Python_Sending_mail_with_attachments">Mail Python API Overview</a> to get to know the list of allowed postfix of ebooks. <br /></li>
+        <li>Send emails to trigger@appid.appspotmail.com or username__trigger@appid.appspotmail.com will trigger a delivery by hand.It equals to the 'deliver now' button in 'Setting' Menu if the subject is empty or is 'all'.Deliver specific books by adding the name of the book, seperate with commma if there is more than one.<br /></li>
     </ul>
     </p>
 
@@ -219,7 +228,8 @@
     <span id="deletebookschinese"></span>
     <h2>Can I delete/hide books in Chinese?</h2>
     <p class="answer">
-        If you are not Chinese, you can delete some *.py files in directory 'books'. <br />'__init__.py' and 'base.py' are required, please don't remove them.
+        If you are not Chinese, you can delete some *.py files in directory 'books'. <br />'__init__.py' and 'base.py' are required, please don't remove them.<br/>
+        If you deploy the application via uploader, uploader can help you to delete books which language is Chinese.
     </p>
 
     <span id="pushseparate"></span>
@@ -229,10 +239,10 @@
     <span id="internalerror"></span>
     <h2>How to solve it if website shows "internal server error" exception.</h2>
     <p class="answer">
-        Open <a href="https://appengine.google.com">appengine.google.com</a>, choose your application, open "Logs", if have <i>“NeedIndexError: no matching index found.”</i> exception, then you can execute command in your computer.
-        <code>python appcfg.py update_indexes YourKindleEarFolder/</code><br />
-        if have <i>“UnknownQueueError”</i> exception, then execute:
-        <code>python appcfg.py update_queues YourKindleEarFolder/</code><br />
+        Open <a href="https://appengine.google.com">appengine.google.com</a>, choose your application, open "Logs", if have <i>“NeedIndexError: no matching index found.”</i> exception, then you can execute command in your computer.<br/>
+        <code>python appcfg.py update_indexes YourKindleEarFolder/</code><br/>
+        if have <i>“UnknownQueueError”</i> exception, execute:<br/>
+        <code>python appcfg.py update_queues YourKindleEarFolder/</code><br/>
         
         After command be executed, please wait some miniutes for GAE generate index for you.
         If the problem still exist, you should deploy KindleEar again.
@@ -251,10 +261,19 @@
     </ul>
     Remarks:
     <ul>
+        <li>Authorization use OAuth v2 technology, only Pocket knows your username and password;</li>
         <li>This application requests 'Add' permission only, asks for neither 'Modify' nor 'Delete', can't retrieve your article list too.</li>
         <li>The Pocket's access token stored in your database, KindleEar application of other guys do not have permission to access your Pocket account;</li>
         <li>If you worry about privacy and security, you can apply an new developer Consumer Key in Pocket website, and then change variable POCKET_CONSUMER_KEY in config.py.</li>
+        <li>If you want KindleEar deliver your unread articles to KinleEar, you can find a RSS address in Pocket page, and add it to list of subscription of KindleEar.</li>
+        <li>Both username and password are requested to active the feature 'Save to <a href="https://www.instapaper.com">Instapaper</a>', but the password is encrypted before be saved to database. </li>
     </ul>
+    </p>
+    
+    <span id="wrongemail"></span>
+    <h2>My logs shows error 'wrong SRC_EMAIL'?</h2>
+    <p class="answer">
+    Go to your <a href="https://console.developers.google.com/appengine/settings">GAE console</a>, in 'Settings' | 'Application settings' page, add your email into field 'Email API authorized senders'.
     </p>
     
     <div id="footer">

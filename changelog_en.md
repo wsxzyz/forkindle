@@ -1,4 +1,26 @@
 #Changelog for KindleEar
+
+##1.23
+  1. New feature: Split very long image to some smaller images.
+  2. Improve decoder of page.
+  3. bugfix: unicode url in OPML cause crash of app. 
+
+##1.22.3
+  1. bugfix: ilegal tag name (unicode name) in xml cause failure in parsing a xml file.
+
+##1.22.2
+  1. Mail-transfer module suppoorts '!links' and '!article' that indicate crawl links in mail or send text only.
+  2. kindle_email field suppoorts multiple email address separated with comma or semicolon.
+
+##1.22.1
+  1. Replace some modules with lastest version.
+
+##1.22
+  1. Rewrite manager of "Feed" via AJAX technology, provide better user experience.
+
+##1.21.1
+  1. Add a feature to save an article to Instapaper.
+
 ##1.21
   1. Add a feature to save an article to Pocket.
 

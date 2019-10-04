@@ -47,22 +47,27 @@ class AutoDecoder:
         #因为有些网页的chardet检测编码是错误的，使用html头可以避免此错误
         #但是html头其实也不可靠，所以再提取文件内的meta信息比对，两者一致才通过(有开关控制)
         #否则的话，还是相信chardet的结果吧
-        if headers:
-            encoding_h = get_encoding_from_headers(headers)
-            encoding_m = get_encoding_from_content(content)
+        encoding_m = get_encoding_from_content(content)
+        encoding_h = get_encoding_from_headers(headers) if headers else None
+        
+        if encoding_m or encoding_h:
+            if encoding_h == encoding_m:
+                try: #'ignore'表明即使有部分解码出错，但是因为http和html都声明为此编码，则可信度已经很高了
+                    return content.decode(encoding_h, 'ignore')
+                except:
+                    pass
             if TRUST_ENCODING_IN_HEADER_OR_META:
-                encoding = encoding_h if encoding_h else encoding_m
-            else:
-                encoding = encoding_h if encoding_h==encoding_m else None
-            
-            if encoding:
-                try:
-                    return content.decode(encoding)
-                except UnicodeDecodeError:
-                    pass #调用最后一条return
-                except Exception as e:
-                    default_log.warn('AutoDecoder failed, changed to chardet: %s [%s]' % (str(e), url))
-                    
+                if encoding_m:
+                    try:
+                        return content.decode(encoding_m)
+                    except:
+                        pass
+                if encoding_h:
+                    try:
+                        return content.decode(encoding_h)
+                    except:
+                        pass
+        
         return self.decode_by_chardet(content, url)
         
     def decode_by_chardet(self, content, url):
@@ -111,6 +116,7 @@ class AutoDecoder:
                         self.encoding = chardet.detect(content)['encoding']
                     else:
                         self.encoding = enc
+                        default_log.warn('Decoded by buffered encoding(%s): [%s]' % (enc, url))
                         return result
                 else: #数据库暂时没有数据
                     self.encoding = chardet.detect(content)['encoding']
@@ -133,6 +139,9 @@ class AutoDecoder:
                 else:
                     newurlenc.pageenc = self.encoding
                 newurlenc.put()
+        
+        default_log.warn('Decoded (%s) by chardet: [%s]' % (self.encoding or 'Unknown Encoding', url))
+        
         return result
 
 def get_encoding_from_content(content):
