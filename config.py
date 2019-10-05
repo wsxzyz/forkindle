@@ -10,7 +10,7 @@ DOMAIN = "http://kindleear.appspot.com/" #Your domain of app
 TIMEZONE = 8  #Default timezone, you can modify it in webpage after deployed
 
 DEFAULT_MASTHEAD = "mh_default.gif" #default masthead
-DEFAULT_COVER = "cv_default.jpg" #default cover, leave it empty will not add cover to book
+DEFAULT_COVER = None #default cover, leave it empty will not add cover to book
 DEFAULT_COVER_BV = DEFAULT_COVER #default cover for merged-book, None indicates paste all covers into one, =DEFAULT_COVER enable the using of uploaded image.
 
 MY_FEEDS_TITLE = u'KindleEar'
