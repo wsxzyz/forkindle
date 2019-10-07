@@ -14,7 +14,7 @@ DEFAULT_COVER = None #default cover, leave it empty will not add cover to book
 DEFAULT_COVER_BV = DEFAULT_COVER #default cover for merged-book, None indicates paste all covers into one, =DEFAULT_COVER enable the using of uploaded image.
 
 MY_FEEDS_TITLE = u'KindleEar'
-MY_FEEDS_DESC = u'RSS delivering from KindleEar'
+MY_FEEDS_DESC = u'RSS from KindleEar'
 
 #default timeout for network connection
 CONNECTION_TIMEOUT = 60

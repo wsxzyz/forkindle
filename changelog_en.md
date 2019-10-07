@@ -1,5 +1,14 @@
 # Changelog for KindleEar
 
+## 1.26.5
+  1. bugfix: fix BUG from 1.26.3, incorrect layout and jump to incorrect position from table of Contents.
+
+## 1.26.4
+  1. bugfix: failed to push comic book, bug from 1.26.2.
+
+## 1.26.3
+  1. Do not add namespace in custom stylesheet.
+
 ## 1.26.2
   1. new feature: user can upload a custom stylesheet for all books.
   2. remove some invalid books.
